@@ -73,6 +73,7 @@ setup(
         "test": ["pytest"],
         "pytorch": ["torch"],
         "tensorflow": ["tensorflow"],
+        "t5x": [""],
         # TODO: Is there a way for all to be the concat of the list of others
         # instead of making a new list? In case some framework needs multiple
         # libraries installed?
@@ -87,6 +88,7 @@ setup(
             "tensorflow-checkpoint = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
             "tf-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
             "tensorflow-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
+            "t5x = git_theta.checkpoints.t5x_checkpoint:T5XCheckpoint",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",

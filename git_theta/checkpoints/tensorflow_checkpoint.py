@@ -43,7 +43,7 @@ class TensorFlowCheckpoint(Checkpoint):
         return param_name
 
     @classmethod
-    def load(cls, checkpoint_path: str):
+    def load(cls, checkpoint_path: str, **kwargs):
         ckpt_read = tf.train.load_checkpoint(checkpoint_path)
         params = {}
         for param_name in ckpt_read.get_variable_to_shape_map():
@@ -67,7 +67,7 @@ class TensorFlowSavedModel(Checkpoint):
         return "tensorflow-savedmodel"
 
     @classmethod
-    def load(cls, checkpoint_path: str):
+    def load(cls, checkpoint_path: str, **kwargs):
         raise ValueError("Sorry, SavedModel support is a work in progress.")
 
     def save(self, checkpoint_path: str):

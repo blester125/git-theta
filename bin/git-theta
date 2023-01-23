@@ -7,7 +7,7 @@ import logging
 import re
 import fnmatch
 
-from git_theta import git_utils, utils, theta, metadata, async_utils
+from git_theta import git_utils, utils, theta, metadata, async_utils, checkpoints
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -144,6 +144,8 @@ def track(args):
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
+
+    checkpoint_handler = checkpoints.get_checkpoint_handler().track_action(model_path)
 
 
 def add(args, unparsed_args):

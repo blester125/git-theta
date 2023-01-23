@@ -10,7 +10,7 @@ class PickledDictCheckpoint(Checkpoint):
     """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
 
     @classmethod
-    def load(cls, checkpoint_path):
+    def load(cls, checkpoint_path, **kwargs):
         """Load a checkpoint into a dict format.
 
         Parameters

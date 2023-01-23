@@ -74,7 +74,7 @@ setup(
         "test": ["pytest"],
         "pytorch": ["torch"],
         "tensorflow": ["tensorflow"],
-        "t5x": [""],
+        "t5x": ["t5x @ git+https://github.com/google-research/t5x@main#egg=t5x"],
         # TODO: Is there a way for all to be the concat of the list of others
         # instead of making a new list? In case some framework needs multiple
         # libraries installed?

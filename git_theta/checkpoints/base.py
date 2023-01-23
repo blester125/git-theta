@@ -23,7 +23,7 @@ class Checkpoint(dict, metaclass=ABCMeta):
         """The name of this checkpoint handler, can be used to lookup the plugin."""
 
     @classmethod
-    def from_file(cls, checkpoint_path):
+    def from_file(cls, checkpoint_path, true_file_name: Optional[str] = None):
         """Create a new Checkpoint object.
 
         Parameters
@@ -31,11 +31,11 @@ class Checkpoint(dict, metaclass=ABCMeta):
         checkpoint_path : str or file-like object
             Path to a checkpoint file
         """
-        return cls(cls.load(checkpoint_path))
+        return cls(cls.load(checkpoint_path, true_file_name=true_file_name))
 
     @classmethod
     @abstractmethod
-    def load(cls, checkpoint_path):
+    def load(cls, checkpoint_path, true_file_name: Optional[str] = None):
         """Load a checkpoint into a dict format.
 
         Parameters
@@ -65,6 +65,10 @@ class Checkpoint(dict, metaclass=ABCMeta):
 
     def unflatten(self):
         return utils.unflatten(self)
+
+    @classmethod
+    def track_action(cls, checkpoint_path):
+        """An optional action to perform when tracking a file."""
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:

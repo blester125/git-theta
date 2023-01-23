@@ -68,7 +68,9 @@ def clean(args):
     logging.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
     checkpoint_handler = checkpoints.get_checkpoint_handler()
-    model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
+    model_checkpoint = checkpoint_handler.from_file(
+        sys.stdin.buffer, true_file_name=args.file
+    )
 
     # Note: If the update serializer is configurable per-parameter, it will need to be created inside _clean
     update_serializer = params.get_update_serializer()
@@ -129,8 +131,15 @@ def clean(args):
 
     # Sort the keys so we don't get changing diffs based on serialization order.
     sorted_checkpoint = dict(sorted(model_checkpoint.flatten().items()))
+    logging.info("FINDME: {len(sorted_checkpoint)}")
     new_metadata = metadata.Metadata(
-        **async_utils.run(async_utils.run_map(sorted_checkpoint, _clean))
+        **async_utils.run(
+            async_utils.run_map(
+                sorted_checkpoint,
+                _clean,
+                max_concurrent=EnvVarConstants.MAX_CONCURRENCY,
+            )
+        )
     )
 
     new_metadata.unflatten().write(sys.stdout)

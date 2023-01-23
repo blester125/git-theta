@@ -106,6 +106,17 @@ def get_gitattributes_file(repo):
     return os.path.join(repo.working_dir, ".gitattributes")
 
 
+def get_gitignore_file(repo):
+    """Find the repo-level gitignore file."""
+    return os.path.join(repo.working_dir, ".gitignore")
+
+
+def add_gitignore(gitignore_file, entries):
+    """Add entries to the gitinore file."""
+    with open(gitignore_file, "a") as wf:
+        wf.write("\n".join(entries))
+
+
 def read_gitattributes(gitattributes_file):
     """
     Read contents of this repo's .gitattributes file

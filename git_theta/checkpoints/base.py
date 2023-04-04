@@ -20,6 +20,10 @@ class Checkpoint(dict, metaclass=ABCMeta):
 
     name: str = NotImplemented  # The name of this checkpoint handler, can be used to lookup the plugin.
 
+    def __init__(self, *args, extra_info=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._extra_info = extra_info
+
     @classmethod
     def from_file(cls, checkpoint_path):
         """Create a new Checkpoint object.
@@ -29,7 +33,8 @@ class Checkpoint(dict, metaclass=ABCMeta):
         checkpoint_path : str or file-like object
             Path to a checkpoint file
         """
-        return cls(cls.load(checkpoint_path))
+        weights, extra = cls.load(checkpoint_path)
+        return cls(weights, extra_info=extra)
 
     @classmethod
     @abstractmethod
@@ -46,6 +51,8 @@ class Checkpoint(dict, metaclass=ABCMeta):
         model_dict : dict
             Dictionary mapping parameter names to parameter values.  Parameters
             should be numpy arrays.
+        extra_info : Any
+            Any extra information that should be saved as part of the checkpoint.
         """
 
     @abstractmethod
@@ -63,6 +70,10 @@ class Checkpoint(dict, metaclass=ABCMeta):
 
     def unflatten(self):
         return utils.unflatten(self)
+
+    @property
+    def extra_info(self):
+        return self._extra_info
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:

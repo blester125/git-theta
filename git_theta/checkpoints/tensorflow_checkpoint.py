@@ -48,7 +48,7 @@ class TensorFlowCheckpoint(Checkpoint):
                 continue
             simple_name = TensorFlowCheckpoint.normalize_name(param_name)
             params[tuple(simple_name.split("/"))] = ckpt_read.get_tensor(param_name)
-        return utils.unflatten(params)
+        return utils.unflatten(params), None
 
     def save(self, checkpoint_path: str):
         model = DynamicNetwork(self)

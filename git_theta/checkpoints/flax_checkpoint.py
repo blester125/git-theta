@@ -13,7 +13,7 @@ class FlaxCheckpoint(Checkpoint):
     @classmethod
     @file_or_name(checkpoint_path="rb")
     def load(cls, checkpoint_path, **kwargs):
-        return serialization.msgpack_restore(checkpoint_path.read())
+        return serialization.msgpack_restore(checkpoint_path.read()), None
 
     @file_or_name(checkpoint_path="wb")
     def save(self, checkpoint_path, **kwargs):

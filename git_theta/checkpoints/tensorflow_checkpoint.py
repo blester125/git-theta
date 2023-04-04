@@ -1,6 +1,6 @@
 """A Checkpoint backend for tensorflow models."""
 
-
+import re
 import numpy as np
 import tensorflow as tf
 from git_theta.checkpoints import Checkpoint
@@ -63,7 +63,12 @@ class TensorFlowSavedModel(Checkpoint):
 
     @classmethod
     def load(cls, checkpoint_path: str):
-        raise ValueError("Sorry, SavedModel support is a work in progress.")
+        m = tf.keras.models.load_model(checkpoint_path)
+        params = {tuple(v.name.split("/")): np.array(v.numpy()) for v in m.weights}
+        return utils.unflatten(params), m
 
     def save(self, checkpoint_path: str):
-        raise ValueError("Sorry, SavedModel support is a work in progress.")
+        weights = {"/".join(k): v for k, v in self.flatten().items()}
+        for variable in self.extra_info.weights:
+            variable.assign(tf.convert_to_tensor(weights[variable.name]))
+        self.extra_info.save(checkpoint_path)

@@ -22,7 +22,7 @@ class Checkpoint(dict, metaclass=ABCMeta):
 
     def __init__(self, *args, extra_info=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._extra_info = extra_info
+        self.extra_info = extra_info
 
     @classmethod
     def from_file(cls, checkpoint_path):
@@ -52,7 +52,7 @@ class Checkpoint(dict, metaclass=ABCMeta):
             Dictionary mapping parameter names to parameter values.  Parameters
             should be numpy arrays.
         extra_info : Any
-            Any extra information that should be saved as part of the checkpoint.
+            Any extra information that should be saved as part of the checkpoint
         """
 
     @abstractmethod
@@ -66,14 +66,22 @@ class Checkpoint(dict, metaclass=ABCMeta):
         """
 
     def flatten(self):
-        return utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
+        flat = utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
+        flat.extra_info = self.extra_info
+        return flat
 
     def unflatten(self):
-        return utils.unflatten(self)
+        unflat = utils.unflatten(self)
+        unflat.extra_info = self.extra_info
+        return unflat
 
     @property
     def extra_info(self):
         return self._extra_info
+
+    @extra_info.setter
+    def extra_info(self, extra):
+        self._extra_info = extra
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:

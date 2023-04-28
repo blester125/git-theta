@@ -23,9 +23,103 @@ This command configures Git to delegate to Git-Theta when performing certain ope
 
 With the model tracked by Git-Theta, you can treat the model checkpoint exactly like you would any other file in a Git repository. All of the regular Git commands (`add`, `commit`, `push`, `pull`, `checkout`, `status`, `diff`, etc.) will work on your model the way they would on any other file.
 
-Additionally, when staging a change to a model, you can provide Git-Theta with additional information about ***what type*** of change is being staged (e.g., a sparse update, a low-rank update, etc.) by running `git theta add model.pt --update-type <update type>`. This allows Git-Theta to store the model update more efficiently, saving disk space and bandwidth when `push`-ing or `pull`-ing.
+Additionally, when staging a change to a model, you can provide Git-Theta with additional information about ***what type*** of change is being staged (e.g., a sparse update, a low-rank update, etc.) by running `git theta add model.pt --update-type <update type>`. This allows Git-Theta to store the model update more efficiently, saving disk space and bandwidth when `push`-ing or `pull`-ing. Similarly, the checkpoint type can be specified here, i.e. `--checkpoint-type flax`.
 
-# Why is this better than using Git or Git LFS?
+# Workflows
+
+I'm a user and I want to:
+
+## Version control a checkpoint as I continue per-training
+
+Recently, pretrained checkpoints have been updated with continued training to expand their capabilities. For example, T5 1.1 [^7] was adapted to a prefix LM task in [^8] and then further adapted for zero-shot inference for novel tasks [^9].
+
+``` sh
+python train.py --data c4 --output "t5_1_1_xxl.pt"
+git theta track t5_1_1_xxl.pt
+git add t5_1_1_xxl.pt
+git commit -m "T5 1.1 initial training run"
+git tag t5-1.1
+```
+
+Now we have the original of T5 1.1 checked in and the commit is reference via the tag `t5-1.1`. This makes it easy to look up later and create release artifacts.
+
+``` sh
+python train.py --data c4-prefix --continue --output "t5_1_1_xxl.pt"
+git add t5_1_1_xxl.pt
+git commit -m "T5 1.1 LM adaptation"
+git tag t5-1.1-lm
+```
+
+Now we have the LM adapted version committed, but the original version is still accessible via it's tagged commit.
+
+``` sh
+python train.py --data p3 --continue --output "t5_1_1_xxl.pt"
+git add t5_1_1_xxl.pt
+git commit -m "T0-xxl"
+git tag t0
+```
+
+Each version of this pre-trained checkpoint is accessible via git and the model's history is explicitly tracked in git. Additionally, only required files are downloaded, so if you never want to use T5 1.1 LM, you'll never have to download it.
+
+## Finetune on Multiple Datasets
+
+That's great but I have a bunch of datasets and I don't want to train them one after the other, I want to start each one from the same starting point. We could save each into its own file, but we'll use git branches in case we want ot merge the models later.
+
+I want to fine-tune BERT [^10] on SST2 and MNLI
+
+``` sh
+git checkout -b SST2
+python train.py --data SST2 --model BERT.ckpt
+git add BERT.ckpt
+git commit -m 'BERT finetuned on SST2'
+```
+
+``` sh
+git checkout main  # Now BERT.ckpt is the original model!
+git checkout -b MNLI
+
+python train.py --data MNLI --model BERT.ckpt
+git add BERT.ckpt
+git commit -m 'BERT finetuned on MNLI'
+```
+
+Now we have multiple finetuned copies of BERT we can access by switching branches.
+
+## Merge a Contributors Model
+
+I've heard that MNLI is a good transfer task and starting from their can help a lot with training other tasks, so I want to bring in those changes. First we need to be on the MNLI branch, this is a local branch in our example, but it could also be from a contributor, i.e. a GitHub pull request. GitHub has further instructions, but the basices are:
+
+``` sh
+git checkout -b ${contrib}-MNLI
+git pull git@github.com:${contrib}/${repo} MNLI
+```
+
+Now we are on a branch looking at their model! We can merge their model in order to test it.
+
+``` sh
+git merge --no-ff main
+```
+
+There will most likely be a merge conflict between the two models so the git-theta merge tool will open. We select our merge strategies via the prompts and end up with the merged model.
+
+Now we can do things like run tests, evaluate on different datasets, and decide if we want to keep their model. If we don't, all we need to do is delete this branch and let them know why we won't be merging it. In this example there isn't much to test as we are overwriting the original checkpoint, but if their patch was something like a few steps of training to fix some specific behavior, we would want to verify it doesn't have detrimental effects.
+
+If we do want to merge it:
+
+``` sh
+git checkout main
+git merge --no-ff ${contrib}-MNLI
+git push origin main
+```
+
+The last line pushes the merged model to the remote repo, making it accessible to all.
+
+## Work with Parameter Efficient Updates
+
+
+
+
+# differences is this better than using Git or Git LFS?
 Git on its own can certainly be used for versioning non-text files such as model checkpoints. However, the main limiting factors are that
 1. Git remotes like Github and Bitbucket have a maximum file size (~50MB)
 2. Git is not designed to handle very large repositories

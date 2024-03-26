@@ -137,3 +137,8 @@ def all_merge_handlers() -> Dict[str, Merge]:
     discovered_plugins = entry_points(group="git_theta.plugins.merges")
     loaded_plugins = {ep.name: ep.load() for ep in discovered_plugins}
     return loaded_plugins
+
+
+def get_merge_handler(merge_type: str) -> Merge:
+    discovered_plugins = entry_points(group="git_theta.plugins.merges")
+    return discovered_plugins[merge_type].load()

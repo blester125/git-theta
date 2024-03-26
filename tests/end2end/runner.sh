@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-source ./utils.sh
+TEST_ROOT=${TEST_ROOT:-.}
+
+source ${TEST_ROOT}/utils.sh
 
 # Create an associated array mapping test name to exit code.
 declare -A TESTS

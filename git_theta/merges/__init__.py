@@ -6,4 +6,9 @@ Note:
   Therefore, plug-ins must not have slow side-effects that happen at import-time.
 """
 
-from git_theta.merges.base import Merge, MergeArgument, all_merge_handlers
+from git_theta.merges.base import (
+    Merge,
+    MergeArgument,
+    all_merge_handlers,
+    get_merge_handler,
+)

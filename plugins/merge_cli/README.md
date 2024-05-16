@@ -127,6 +127,9 @@ git-theta-merge-cli \
   --merge ties-gpu
 ```
 
+> [!NOTE]
+> This TIES implementation is different from the original implementation, for parameters whose value (summed across models) is zero use the majority sign from the *current parameter block* instead of from the *whole model*. The original implementation can be used in a two pass method. First run the `majority_sign` script over all the `--aux_data` ties trimmed statistics. This will output the majority sign for the whole model. This can then be used during merging with `--x:global_majority_sign=...`.
+
 ##### Fisher
 
 ```sh

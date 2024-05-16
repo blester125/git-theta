@@ -102,6 +102,7 @@ setup(
         ],
         "console_scripts": [
             "git-theta-merge-cli = git_theta_merge_cli.scripts.git_theta_merge_cli:main",
+            "git-theta-merge-majority-sign = git_theta_merge_cli.scripts.majority_sign:main",
         ],
     },
 )

@@ -1,5 +1,7 @@
 """Merging via TIES. https://arxiv.org/abs/2306.01708"""
 
+from typing import Optional
+
 import numpy as np
 import torch
 from git_theta_merge_cli.merges import utils
@@ -16,7 +18,13 @@ class TIES(PyTorchMixin, RWVariadicMerge):
 
     name = "ties"
 
-    def __init__(self, *args, merge_lambda: float = 0.1, **kwargs):
+    def __init__(
+        self,
+        *args,
+        merge_lambda: float = 0.1,
+        global_majority_sign: Optional[int] = None,
+        **kwargs
+    ):
         """Merge with TIES.
 
         Args:
@@ -24,6 +32,7 @@ class TIES(PyTorchMixin, RWVariadicMerge):
         """
         super().__init__(*args, **kwargs)
         self.merge_lambda = merge_lambda
+        self.global_majority_sign = global_majority_sign
 
     def memory_efficient_ies(self, params):
         """Dis-mean averaging with a low memory footprint."""
@@ -31,12 +40,16 @@ class TIES(PyTorchMixin, RWVariadicMerge):
         # Get the sign of the each parameter summed across models.
         resolved_sign = torch.sign(sum_params)
         # Replace any zeros with the majority sign across parameters.
-        # Note: This diverges from the TIES implementation slightly, instead of
-        #       being the majority sign *within this layer*, the original paper
-        #       uses the majority sign across the whole model.
-        resolved_sign.masked_fill_(
-            resolved_sign == 0, torch.sign(torch.sum(resolved_sign))
-        )
+        if self.global_majority_sign is not None:
+            majority_sign = torch.tensor(self.global_majority_sign).to(
+                resolved_sign.dtype
+            )
+        else:
+            # Note: This diverges from the TIES implementation slightly, instead
+            #       of being the majority sign *within this layer*, the original
+            #       paper uses the majority sign across the whole model.
+            majority_sign = torch.sign(torch.sum(resolved_sign))
+        resolved_sign.masked_fill_(resolved_sign == 0, majority_sign)
 
         # Manually do the memory efficient sum as building multiple lists uses too much.
         sum_selected = torch.zeros_like(params[0])

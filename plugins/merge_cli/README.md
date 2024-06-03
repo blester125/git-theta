@@ -179,6 +179,23 @@ git-theta-merge-cli \
   --merge covariance-mats-gpu
 ```
 
+
+##### SLERP/MLERP
+
+``` sh
+git-theta-merge-cli \
+  --models models/a/model.pt \
+           models/b/model.pt \
+           models/c/model.pt \
+  --ancestor ... \
+  --x:norm ... \
+  --x:norm ... \
+  --x:norm ... \
+  --output merges/slerp/merged.pt \
+  --merge slerp \
+```
+
+
 ## Deleting a Merged Model
 
 Use `git reset --hard HEAD^` to delete the commit for the most recent model. This will leave parameters in the `.git/lfs` directory 😢 we don't have good tool for fixing this yet.

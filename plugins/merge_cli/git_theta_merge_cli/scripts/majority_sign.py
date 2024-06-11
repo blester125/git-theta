@@ -73,7 +73,7 @@ def main():
     )
 
     sign_total = sum(sign_calc.values())
-    global_majority_sign = 1 if sign_total > 0 else -1
+    global_majority_sign = 1 if sign_total >= 0 else -1
 
     print(f"Global Majority Sign is: {global_majority_sign}")
 

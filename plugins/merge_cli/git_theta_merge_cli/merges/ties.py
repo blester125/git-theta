@@ -49,6 +49,8 @@ class TIES(PyTorchMixin, RWVariadicMerge):
             #       of being the majority sign *within this layer*, the original
             #       paper uses the majority sign across the whole model.
             majority_sign = torch.sign(torch.sum(resolved_sign))
+            # If we happen to have an equal number of 1s and -1s, choose 1.
+            majority_sign = majority_sign.masked_fill(majority_sign == 0, 1)
         resolved_sign.masked_fill_(resolved_sign == 0, majority_sign)
 
         # Manually do the memory efficient sum as building multiple lists uses too much.

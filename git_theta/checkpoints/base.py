@@ -103,12 +103,16 @@ class Checkpoint(dict, metaclass=ABCMeta):
         ).unflatten()
         modified = cls(
             {
-                k: v
+                k: (v, m2_flat[k])
                 for k, v in m1_flat.items()
-                if k in m2_flat and not np.allclose(v, m2_flat[k])
+                if k in m2_flat and not cls.leaf_equal(v, m2_flat[k])
             }
         ).unflatten()
         return added, removed, modified
+
+    @classmethod
+    def leaf_equal(cls, x, y):
+        return np.allclose(x, y)
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:

@@ -37,49 +37,53 @@ def clean(
         param_metadata = prev_metadata.get(param_keys)
         # Create new metadata from the current value
         logger.debug(f"Making new Metadata for {'/'.join(param_keys)}")
-        new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
+        metadata_handler = metadata.get_metadata_handler()
+        new_tensor_metadata = metadata_handler.from_tensor(new_param)
         logger.debug(f"Finished new Metadata for {'/'.join(param_keys)}")
 
         # If the parameter tensor has not changed, just keep the metadata the same
         # TODO: Encapsulate this parameter check within an equality check.
         if (
             param_metadata
-            and param_metadata.tensor_metadata.shape == new_tensor_metadata.shape
-            and param_metadata.tensor_metadata.dtype == new_tensor_metadata.dtype
             # A parameter with a side-loaded update will not have changed in the
             # normal checkpoint, so ask the updater if it will be updated with
             # side-loaded information.
             and not update_handler.will_update(param_keys)
+            and param_metadata.tensor_metadata == new_tensor_metadata
         ):
-            # Compare the parameters using the LSH
-            hasher = lsh.get_lsh()
-            # TODO: Is is possible to make this comparison async?
-            logger.debug(f"Comparing Hashes for: {'/'.join(param_keys)}")
-            hash_distance = hasher.distance(
-                param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
-            )
-            # If hash_distance < PARAMETER_ATOL, assume the tensors pass
-            # np.allclose and parameter hasn't changed
-            if hash_distance < EnvVarConstants.PARAMETER_ATOL:
-                return param_keys, param_metadata
-            # If PARAMETER_ATOL < hash_distance < LSH_THRESHOLD, load parameters
-            # and check if parameter has changed with np.allclose
-            elif hash_distance < EnvVarConstants.LSH_THRESHOLD:
-                # Load the previous parameter using the specific update handler
-                # for that parameter.
-                param_update_handler = updates.get_update_handler(
-                    param_metadata.theta_metadata.update_type
-                )(update_serializer)
-                param = await param_update_handler.apply(
-                    param_metadata, param_keys, repo=repo, path=path
-                )
-                if np.allclose(
-                    param,
-                    new_param,
-                    rtol=EnvVarConstants.PARAMETER_RTOL,
-                    atol=EnvVarConstants.PARAMETER_ATOL,
-                ):
-                    return param_keys, param_metadata
+            return param_keys, param_metadata
+            # TODO: The current change doesn't handle the case where we are
+            # under the LSH Threshold and want to double check with np.allclose
+            #
+            # # Compare the parameters using the LSH
+            # hasher = lsh.get_lsh()
+            # # TODO: Is is possible to make this comparison async?
+            # logger.debug(f"Comparing Hashes for: {'/'.join(param_keys)}")
+            # hash_distance = hasher.distance(
+            #     param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
+            # )
+            # # If hash_distance < PARAMETER_ATOL, assume the tensors pass
+            # # np.allclose and parameter hasn't changed
+            # if hash_distance < EnvVarConstants.PARAMETER_ATOL:
+            #     return param_keys, param_metadata
+            # # If PARAMETER_ATOL < hash_distance < LSH_THRESHOLD, load parameters
+            # # and check if parameter has changed with np.allclose
+            # elif hash_distance < EnvVarConstants.LSH_THRESHOLD:
+            #     # Load the previous parameter using the specific update handler
+            #     # for that parameter.
+            #     param_update_handler = updates.get_update_handler(
+            #         param_metadata.theta_metadata.update_type
+            #     )(update_serializer)
+            #     param = await param_update_handler.apply(
+            #         param_metadata, param_keys, repo=repo, path=path
+            #     )
+            #     if np.allclose(
+            #         param,
+            #         new_param,
+            #         rtol=EnvVarConstants.PARAMETER_RTOL,
+            #         atol=EnvVarConstants.PARAMETER_ATOL,
+            #     ):
+            #         return param_keys, param_metadata
 
         # Create git-theta metadata for the new parameter.
         new_theta_metadata = metadata.ThetaMetadata(
@@ -97,7 +101,7 @@ def clean(
         # so it is based on the updated value, not the old one.
         if param_hash is not None:
             new_tensor_metadata.hash = param_hash
-        # Combine metadata into single paramtere metadata blob
+        # Combine metadata into single parameter metadata blob
         new_param_metadata = metadata.ParamMetadata(
             lfs_metadata=lfs_metadata,
             tensor_metadata=new_tensor_metadata,

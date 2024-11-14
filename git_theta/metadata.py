@@ -6,9 +6,16 @@ import dataclasses
 import hashlib
 import json
 import logging
+import operator as op
 import re
+import sys
 from collections import OrderedDict
 from typing import Any, ClassVar, Dict, TextIO, Tuple, Union
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 import git
 import numpy as np
@@ -64,11 +71,19 @@ class TensorMetadata(MetadataField):
         self.hash = np.array(self.hash)
 
     def __eq__(self, other):
-        return (
-            self.shape == other.shape
-            and self.dtype == other.dtype
-            and np.array_equal(self.hash, other.hash)
-        )
+        if self.shape != other.shape:
+            return False
+        if self.dtype != other.dtype:
+            return False
+        if np.array_equal(self.hash, other.hash):
+            return True
+        hasher = lsh.get_lsh()
+        hash_distance = hasher.distance(self.hash, other.hash)
+        # If hash_distance < PARAMETER_ATOL, assume the tensors pass
+        # np.allclose and parameter hasn't changed
+        if hash_distance < utils.EnvVarConstants.PARAMETER_ATOL:
+            return True
+        return False
 
     @classmethod
     def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
@@ -79,6 +94,29 @@ class TensorMetadata(MetadataField):
         hash = lsh.get_lsh().hash(tensor)
         logger.debug(f"Finished LSH Hash")
         return cls(shape=shape, dtype=dtype, hash=hash)
+
+
+@dataclasses.dataclass(eq=True)
+class JsonMetadata(MetadataField):
+    hash: str
+    name: ClassVar[str] = "tensor_metadata"
+
+    def __eq__(self, other):
+        return self.hash == other.hash
+
+    @classmethod
+    def from_tensor(cls, tensor) -> DataMetadata:
+        """Bad name."""
+        example = tensor
+        example = {k: v for k, v in sorted(example.items(), key=op.itemgetter(0))}
+        h = hashlib.sha256(json.dumps(example).encode("utf-8")).hexdigest()
+        return cls(hash=h)
+
+
+def get_metadata_handler(metadata_type: Optional[str] = None) -> MetadataField:
+    metadata_type = metadata_type or utils.EnvVarConstants.METADATA_TYPE
+    discovered_plugins = entry_points(group="git_theta.plugins.metadata")
+    return discovered_plugins[metadata_type].load()
 
 
 @dataclasses.dataclass(eq=True)
@@ -96,7 +134,7 @@ class ParamMetadata(MetadataField):
 
     @classmethod
     def from_metadata_dict(cls, d: Dict[str, Any]) -> ParamMetadata:
-        tensor_metadata = TensorMetadata(**d[TensorMetadata.name])
+        tensor_metadata = get_metadata_handler()(**d[TensorMetadata.name])
         lfs_metadata = LfsMetadata(**d[LfsMetadata.name])
         theta_metadata = ThetaMetadata(**d[ThetaMetadata.name])
         return cls(tensor_metadata, lfs_metadata, theta_metadata)

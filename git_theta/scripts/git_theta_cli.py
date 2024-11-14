@@ -104,7 +104,12 @@ def post_commit(args):
             added, removed, modified = curr_metadata.diff(prev_metadata)
             oids.update([param.lfs_metadata.oid for param in added.flatten().values()])
             oids.update(
-                [param.lfs_metadata.oid for param in modified.flatten().values()]
+                [
+                    param[0].lfs_metadata.oid
+                    for param in utils.flatten(
+                        modified, is_leaf=lambda v: isinstance(v, tuple)
+                    ).values()
+                ]
             )
 
     commit_info = theta.CommitInfo(oids)

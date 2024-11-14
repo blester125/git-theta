@@ -73,6 +73,9 @@ class EnvVar:
 class EnvVarConstants:
     CHECKPOINT_TYPE = EnvVar(name="GIT_THETA_CHECKPOINT_TYPE", default="pytorch")
     UPDATE_TYPE = EnvVar(name="GIT_THETA_UPDATE_TYPE", default="dense")
+    METADATA_TYPE = EnvVar(name="GIT_THETA_METADATA_TYPE", default="tensor")
+    SERALIZER_TYPE = EnvVar(name="GIT_THETA_SERIALIZER_TYPE", default="tensorstore")
+    DIFF_TYPE = EnvVar(name="GIT_THETA_DIFF_TYPE", default="tensor")
     UPDATE_DATA_PATH = EnvVar(name="GIT_THETA_UPDATE_DATA_PATH", default="")
     PARAMETER_ATOL = EnvVar(name="GIT_THETA_PARAMETER_ATOL", default=1e-8)
     PARAMETER_RTOL = EnvVar(name="GIT_THETA_PARAMETER_RTOL", default=1e-5)

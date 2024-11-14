@@ -98,6 +98,7 @@ setup(
         'importlib_metadata; python_version < "3.10.0"',
         'typing_extensions; python_version < "3.8.0"',
         "prompt_toolkit",
+        "colorama",
     ],
     extras_require={
         **frameworks_require,
@@ -125,6 +126,19 @@ setup(
             "flax-checkpoint = git_theta.checkpoints.flax_checkpoint:FlaxCheckpoint",
             "safetensors = git_theta.checkpoints.safetensors_checkpoint:SafeTensorsCheckpoint",
             "safetensors-checkpoint = git_theta.checkpoints.safetensors_checkpoint:SafeTensorsCheckpoint",
+            "data-jsonl = git_theta.checkpoints.data:JsonlDataCheckpoint",
+        ],
+        "git_theta.plugins.metadata": [
+            "tensor = git_theta.metadata:TensorMetadata",
+            "json = git_theta.metadata:JsonMetadata",
+        ],
+        "git_theta.plugins.serializers": [
+            "tensorstore = git_theta.params:TensorStoreSerializer",
+            "json = git_theta.params:JsonSerializer",
+        ],
+        "git_theta.plugins.diffs": [
+            "tensor = git_theta.scripts.git_theta_diff:TensorDiff",
+            "json = git_theta.scripts.git_theta_diff:JsonDiff",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",

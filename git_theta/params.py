@@ -1,9 +1,19 @@
 """Classes for serializing model updates."""
 
+import json
+import sys
 from abc import ABCMeta, abstractmethod
+from typing import Optional
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 import msgpack
 import tensorstore as ts
+
+from git_theta import utils
 
 
 class TensorSerializer(metaclass=ABCMeta):
@@ -43,6 +53,14 @@ class TensorStoreSerializer(TensorSerializer):
         store = await ts.open({"driver": "zarr", "kvstore": "memory://"}, context=ctx)
         param = await store.read()
         return param
+
+
+class JsonSerializer(TensorSerializer):
+    async def serialize(self, tensor):
+        return json.dumps(tensor)
+
+    async def deserialize(self, serialized_tensor):
+        return json.loads(serialized_tensor)
 
 
 class FileCombiner(metaclass=ABCMeta):
@@ -98,7 +116,8 @@ class UpdateSerializer(Serializer):
         return update_params
 
 
-def get_update_serializer():
-    # TODO: Right now this just returns a tensorstore/msgpack serializer but in
-    # the future we can implement other Serializers and/or support user plugins
-    return UpdateSerializer(TensorStoreSerializer(), MsgPackCombiner())
+def get_update_serializer(serializer_type: Optional[str] = None) -> UpdateSerializer:
+    serializer_type = serializer_type or utils.EnvVarConstants.SERALIZER_TYPE
+    discovered_plugins = entry_points(group="git_theta.plugins.serializers")
+    seralizer = discovered_plugins[serializer_type].load()
+    return UpdateSerializer(seralizer(), MsgPackCombiner())
